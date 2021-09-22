@@ -50,7 +50,9 @@ class ProductController extends Controller
     public function show(product $product)
     {
         return response()
-        ->json($product);
+            ->json(Product::with('Supermarkets')
+            ->where('id', $product->id)
+            ->get());
     }
 
     /**
@@ -62,8 +64,19 @@ class ProductController extends Controller
      */
     public function update(Request $request, product $product)
     {
-        $product
-        ->update($request->all());
+        $product->update($request->all());
+
+
+        if ($request->price === 0) {
+            $product
+                ->Supermarkets()
+                    ->detach($request->supermarket);
+        } else {
+            $product
+                ->Supermarkets()
+                    ->sync([$request->supermarket => ['price' => $request->price]], false);
+        }
+        
 
         return response()->json($product);
     }
@@ -76,6 +89,10 @@ class ProductController extends Controller
      */
     public function destroy(product $product)
     {
+        $product
+            ->Supermarkets()
+                ->detach();
+
         $product->delete();
 
         return response()->json($product);
